@@ -325,7 +325,9 @@ plot_3_5 <- ggplot(data_ml, aes(x = year, y = mileage)) +
 # Save the plot in the working directory
 ggsave("plot_3_5.png", plot = plot_3_5, width = 8, height = 6, units = "in")
 
+###############################################################################
 # 3.6. Distribution of cars by Engine Displacement vs Year
+###############################################################################
 
 plot_3_6 <- ggplot(data_ml, aes(x = year, y = Engine_displacement)) +
   geom_point(size = 2, color = "skyblue") +
@@ -771,8 +773,8 @@ mae
 #[1] 10068.13
 
 # Calculate RMSE for all data points
-rmse_all <- sqrt(mean((knn_model - test_data$Price_Us)^2))
-rmse_all
+rmse_knn <- sqrt(mean((knn_model - test_data$Price_Us)^2))
+rmse_knn
 #[1] 14892.31
 
 # Calculate residuals
@@ -834,7 +836,7 @@ cdf_plot_4_4 <- ggplot(cdf_data_4_4, aes(x = Predicted)) +
 ggsave("cdf_plot_4_4.png", plot = cdf_plot_4_4, width = 8, height = 6, units = "in")
 
 ###############################################################################
-# 4.5. Machine Learning model: Random Forest (Adding categorical variables)   #
+# 4.5. Machine Learning model: Random Forest                                  #
 ###############################################################################
 
 # Read the "data_ml.csv" file from the current working directory
@@ -1145,6 +1147,15 @@ xgb_model <- xgboost(
 
 #[500]	train-rmse:3959.115034
 
+# Extract feature importance scores
+importance_scores <- xgb.importance(model = xgb_model)
+
+# Convert the importance scores to a data frame
+importance_df <- as.data.frame(importance_scores)
+
+# Save the importance data frame as a CSV file
+write.csv(importance_df, "feature_importance.csv", row.names = FALSE)
+
 # Create a data frame with RMSE improvement along boosting round
 rmse_data <- data.frame(
   Boosting_Round = 1:270,
@@ -1265,7 +1276,8 @@ scatter_4_7 <- ggplot(scatter_data_4_7, aes(x = Actual, y = Predicted, color = C
   ) +
   geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
   scale_color_manual(values = c("skyblue" = "skyblue", "lightgreen" = "lightgreen")) +
-  theme_economist_white()
+  theme_economist_white() +
+  guides(color = "none") 
 
 # Save the plot in the working directory
 ggsave("scatter_4_7.png", plot = scatter_4_7, width = 8, height = 6, units = "in")
@@ -1296,6 +1308,24 @@ cdf_plot_4_7 <- ggplot(cdf_data_4_7, aes(x = Predicted)) +
 ggsave("cdf_plot_4_7.png", plot = cdf_plot_4_7, width = 8, height = 6, units = "in")
 
 # Code tested as of Oct 9, 2023 10:09 am AM
+
+# Create a table with RMSE values for all models
+rmse_table <- data.frame(
+  Model = c("Benchmark", "Linear Regression", "kNN", "Random Forest", "LightGBM", "XGBoost"),
+  RMSE = c(rmse_mean, rmse_lm, rmse_knn, rmse_rf, rmse_lgbm, rmse_xgb)
+)
+
+# Save the table as a CSV file
+write.csv(rmse_table, "rmse_table.csv", row.names = FALSE)
+
+# Create a table with KS statistics for all models
+ks_table <- data.frame(
+  Model = c("Benchmark", "Linear Regression", "kNN", "Random Forest", "LightGBM", "XGBoost"),
+  KS_Statistic = c(ks_statistic, ks_statistic_lm, ks_statistic_knn, ks_statistic_rf, ks_statistic_lgbm, ks_statistic_xgb)
+)
+
+# Save the table as a CSV file
+write.csv(ks_table, "ks_table.csv", row.names = FALSE)
 
 ###############################################################################
 # 5. MODEL VALIDATION                                                         #
@@ -1330,6 +1360,17 @@ rmse_xgb_v <- sqrt(mean((xgb_predictions_mv - hold_out_data$Price_Us)^2))
 rmse_xgb_v
 #[1] 10403.11
 
+# Create a density plot of residuals
+plot_5_1 <- ggplot(data = data.frame(Residuals = residuals), aes(x = Residuals)) +
+  geom_density(fill = "green", alpha = 0.5) +
+  labs(title = "Smooth Distribution of Residuals",
+       x = "Residuals",
+       y = "Density") +
+  theme_minimal()
+
+# Save the plot in the working directory
+ggsave("plot_5_1.png", plot = plot_5_1, width = 8, height = 6, units = "in")
+
 # Calculate residuals
 residuals <- hold_out_data$Price_Us - xgb_predictions_mv
 
@@ -1348,7 +1389,8 @@ scatter_5_1 <- ggplot(data = hold_out_data, aes(x = Price_Us, y = xgb_prediction
        x = "Actual Price_Us",
        y = "Predicted Price_Us") +
   theme_economist_white() +
-  theme(plot.title = element_text(size = 12))  
+  theme(plot.title = element_text(size = 12)) +
+  guides(color = "none")
 
 # Save the plot in the working directory
 ggsave("scatter_5_1.png", plot = scatter_5_1, width = 8, height = 6, units = "in")
@@ -1384,6 +1426,5 @@ ggsave("cdf_plot_5_1.png", plot = cdf_plot_5_1, width = 8, height = 6, units = "
 #* Plots saved as of Oct 15, 2023 2:13 pm AM
 #* Models saved as of Oct 15, 2023 2:27 pm AM
 #* References completed RMD as of Oct 18, 2023 7:53 pm AM
-
-#* Code upload to GitHub
-#* Three files submit on EDX course
+#* Code uploaded to GitHub
+#* Three files submitted on EDX
